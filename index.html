@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cricket Pulse AI • Live Scores, ICC Player Intel & Match Video</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏏</text></svg>">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cricket: {
+              pitch: '#080E1A',
+              stadium: '#0F172A',
+              card: '#111C30',
+              neonGreen: '#00F59B',
+              neonGold: '#FBBF24',
+              neonBlue: '#38BDF8',
+              neonRed: '#F43F5E'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18 & Babel CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body {
+      background-color: #080E1A;
+      color: #F1F5F9;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0F172A; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #10B981; }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(0, 245, 155, 0.4); }
+      50% { box-shadow: 0 0 25px rgba(0, 245, 155, 0.8); }
+    }
+    .neon-border {
+      border: 1px solid rgba(0, 245, 155, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    // Cricket Data
+    const MATCHES_DATA = [
+      {
+        id: "match-01",
+        tournament: "ICC Men's T20 World Cup 2026 - Final",
+        type: "INTERNATIONAL",
+        format: "T20I",
+        status: "LIVE",
+        statusText: "India needs 22 runs in 14 balls to win",
+        venue: "Melbourne Cricket Ground, Melbourne",
+        team1: { name: "Australia", shortName: "AUS", flag: "🇦🇺", score: 188, wickets: 6, overs: 20.0, runRate: 9.40 },
+        team2: { name: "India", shortName: "IND", flag: "🇮🇳", score: 167, wickets: 4, overs: 17.4, target: 189, requiredRunRate: 9.43, currentRunRate: 9.45 },
+        currentBatsmen: [
+          { name: "Virat Kohli", runs: 76, balls: 46, fours: 7, sixes: 3, strikeRate: 165.2, isStriker: true },
+          { name: "Hardik Pandya", runs: 28, balls: 14, fours: 2, sixes: 2, strikeRate: 200.0, isStriker: false }
+        ],
+        currentBowler: { name: "Mitchell Starc", overs: 3.4, maidens: 0, runs: 38, wickets: 2, economy: 10.36 },
+        recentBalls: ["1", "4", "6", "0", "2", "1", "W", "6", "4", "1", "2"],
+        winProbability: { team1: 34, team2: 66, aiAnalysis: "India has a 66% probability of victory with set batsman Virat Kohli anchoring at 165 SR and Mitchell Starc defending 22 off 14. Key factor: Bumrah's earlier spell (2/19) restricted Australia below 200." },
+        streamUrl: "https://www.youtube.com/embed/jfKfPfyJRdk",
+        streamChannel: "Star Sports / ICC TV World Feed",
+        fullScorecard: {
+          team1Batting: [
+            { name: "Travis Head", dismissal: "c Kohli b Bumrah", runs: 64, balls: 35, fours: 6, sixes: 4, sr: 182.8 },
+            { name: "David Warner", dismissal: "b Arshdeep", runs: 22, balls: 16, fours: 3, sixes: 0, sr: 137.5 },
+            { name: "Mitchell Marsh (c)", dismissal: "c Pant b Kuldeep", runs: 34, balls: 24, fours: 2, sixes: 2, sr: 141.6 },
+            { name: "Glenn Maxwell", dismissal: "c Hardik b Bumrah", runs: 18, balls: 10, fours: 1, sixes: 1, sr: 180.0 },
+            { name: "Marcus Stoinis", dismissal: "run out (Jadeja)", runs: 26, balls: 17, fours: 2, sixes: 1, sr: 152.9 },
+            { name: "Tim David", dismissal: "not out", runs: 16, balls: 12, fours: 1, sixes: 1, sr: 133.3 },
+            { name: "Pat Cummins", dismissal: "c & b Hardik", runs: 4, balls: 6, fours: 0, sixes: 0, sr: 66.6 }
+          ],
+          team2Bowling: [
+            { name: "Jasprit Bumrah", overs: 4, maidens: 0, runs: 19, wickets: 2, econ: 4.75 },
+            { name: "Arshdeep Singh", overs: 4, maidens: 0, runs: 42, wickets: 1, econ: 10.50 },
+            { name: "Hardik Pandya", overs: 4, maidens: 0, runs: 37, wickets: 1, econ: 9.25 },
+            { name: "Kuldeep Yadav", overs: 4, maidens: 0, runs: 32, wickets: 1, econ: 8.00 },
+            { name: "Axar Patel", overs: 4, maidens: 0, runs: 58, wickets: 0, econ: 14.50 }
+          ],
+          team2Batting: [
+            { name: "Rohit Sharma (c)", dismissal: "c Cummins b Hazlewood", runs: 32, balls: 18, fours: 4, sixes: 2, sr: 177.7 },
+            { name: "Rishabh Pant", dismissal: "c Marsh b Zampa", runs: 14, balls: 12, fours: 1, sixes: 0, sr: 116.6 },
+            { name: "Virat Kohli", dismissal: "batting", runs: 76, balls: 46, fours: 7, sixes: 3, sr: 165.2 },
+            { name: "Suryakumar Yadav", dismissal: "c Maxwell b Starc", runs: 15, balls: 9, fours: 2, sixes: 1, sr: 166.6 },
+            { name: "Shivam Dube", dismissal: "b Starc", runs: 2, balls: 5, fours: 0, sixes: 0, sr: 40.0 },
+            { name: "Hardik Pandya", dismissal: "batting", runs: 28, balls: 14, fours: 2, sixes: 2, sr: 200.0 }
+          ]
+        },
+        commentary: [
+          { over: "17.4", text: "Starc to Hardik Pandya, 2 runs, clipped off the pads toward deep square leg. Excellent sprint between the wickets by both batsmen!", tag: "🏃 2 Runs", speed: "144.2 km/h" },
+          { over: "17.3", text: "Starc to Virat Kohli, 1 run, driven firmly down to long-on. Controlled rotation, keeping the strike ticking.", tag: "Single", speed: "146.0 km/h" },
+          { over: "17.2", text: "Starc to Virat Kohli, FOUR! MAGNIFICENT! In the slot outside off, Kohli carves it over extra cover with sublime timing. Pure genius!", tag: "🚀 FOUR", speed: "141.8 km/h" },
+          { over: "17.1", text: "Starc to Virat Kohli, SIX! HIGH, HANDSOME AND INTO THE TIER! What a strike under sheer pressure! Length ball deposited 88 meters into midwicket!", tag: "🔥 SIX", speed: "139.5 km/h" },
+          { over: "16.6", text: "Hazlewood to Hardik Pandya, no run, beaten by the extra bounce outside off stump. Vital dot ball.", tag: "Dot", speed: "138.2 km/h" }
+        ]
+      },
+      {
+        id: "match-02",
+        tournament: "Indian Premier League (IPL) 2026 - El Clásico",
+        type: "PREMIER_LEAGUE",
+        format: "T20",
+        status: "LIVE",
+        statusText: "CSK needs 44 runs in 21 balls",
+        venue: "Wankhede Stadium, Mumbai",
+        team1: { name: "Mumbai Indians", shortName: "MI", flag: "🔵", score: 214, wickets: 5, overs: 20.0, runRate: 10.70 },
+        team2: { name: "Chennai Super Kings", shortName: "CSK", flag: "🟡", score: 171, wickets: 3, overs: 16.3, target: 215, requiredRunRate: 12.57, currentRunRate: 10.36 },
+        currentBatsmen: [
+          { name: "Ruturaj Gaikwad (c)", runs: 82, balls: 48, fours: 8, sixes: 4, strikeRate: 170.8, isStriker: true },
+          { name: "MS Dhoni", runs: 18, balls: 6, fours: 1, sixes: 2, strikeRate: 300.0, isStriker: false }
+        ],
+        currentBowler: { name: "Jasprit Bumrah", overs: 3.3, maidens: 0, runs: 16, wickets: 2, economy: 4.57 },
+        recentBalls: ["6", "1", "6", "4", "0", "1", "2"],
+        winProbability: { team1: 58, team2: 42, aiAnalysis: "Tight finish at Wankhede! Bumrah has 3 deliveries left in his spell. If CSK survives Bumrah without losing Gaikwad, Dhoni's death-over strike rate gives them chasing momentum." },
+        streamUrl: "https://www.youtube.com/embed/5qap5aO4i9A",
+        streamChannel: "JioCinema / Sky Sports Cricket",
+        fullScorecard: null,
+        commentary: [
+          { over: "16.3", text: "Bumrah to Gaikwad, 1 run, toe-crusher yorker dug out with sheer wrist brilliance toward deep midwicket.", tag: "Single", speed: "148.5 km/h" },
+          { over: "16.2", text: "Bumrah to Dhoni, 1 run, guided down to third man with soft hands.", tag: "Single", speed: "142.1 km/h" },
+          { over: "16.1", text: "Bumrah to Dhoni, SIX! THUNDEROUS! Vintage Dhoni helicopter whipped into the top deck at Wankhede! Crowd deafening!", tag: "🔥 SIX", speed: "140.0 km/h" }
+        ]
+      },
+      {
+        id: "match-03",
+        tournament: "ICC World Test Championship - The Ashes 2026",
+        type: "INTERNATIONAL",
+        format: "TEST",
+        status: "LIVE",
+        statusText: "Day 3, Session 2 - England trail by 84 runs",
+        venue: "Lord's Cricket Ground, London",
+        team1: { name: "Australia", shortName: "AUS", flag: "🇦🇺", score: 384, wickets: 10, overs: 104.2, runRate: 3.68 },
+        team2: { name: "England", shortName: "ENG", flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿", score: 300, wickets: 6, overs: 68.4, target: null, requiredRunRate: null, currentRunRate: 4.37 },
+        currentBatsmen: [
+          { name: "Joe Root", runs: 112, balls: 148, fours: 14, sixes: 1, strikeRate: 75.6, isStriker: true },
+          { name: "Ben Stokes (c)", runs: 45, balls: 54, fours: 5, sixes: 2, strikeRate: 83.3, isStriker: false }
+        ],
+        currentBowler: { name: "Pat Cummins", overs: 18.4, maidens: 3, runs: 62, wickets: 3, economy: 3.32 },
+        recentBalls: ["0", "4", "1", "0", "0", "2", "0"],
+        winProbability: { team1: 45, team2: 40, aiAnalysis: "Joe Root's magnificent century anchors England's response. Cummins is extracting sharp reverse swing from the Nursery End." },
+        streamUrl: "https://www.youtube.com/embed/21X5lGlDOfg",
+        streamChannel: "Sky Sports Cricket / Willow TV",
+        fullScorecard: null,
+        commentary: []
+      },
+      {
+        id: "match-04",
+        tournament: "Pakistan Super League (PSL) 2026 - Qualifier",
+        type: "PREMIER_LEAGUE",
+        format: "T20",
+        status: "UPCOMING",
+        statusText: "Starts today at 7:30 PM PKT",
+        venue: "Gaddafi Stadium, Lahore",
+        team1: { name: "Lahore Qalandars", shortName: "LQ", flag: "🟢", score: 0, wickets: 0, overs: 0, runRate: 0 },
+        team2: { name: "Peshawar Zalmi", shortName: "PZ", flag: "🟡", score: 0, wickets: 0, overs: 0, target: null, requiredRunRate: null, currentRunRate: 0 },
+        currentBatsmen: [],
+        currentBowler: null,
+        recentBalls: [],
+        winProbability: { team1: 52, team2: 48, aiAnalysis: "Shaheen Afridi and Haris Rauf give Lahore pace dominance, while Babar Azam's current form provides Peshawar their primary spine." },
+        streamUrl: "https://www.youtube.com/embed/kJQP7kiw5Fk",
+        streamChannel: "A Sports / PSL Official",
+        fullScorecard: null,
+        commentary: []
+      }
+    ];
+
+    const PLAYERS_DATABASE = [
+      {
+        id: "player-01",
+        name: "Virat Kohli",
+        country: "India",
+        flag: "🇮🇳",
+        avatar: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=500&auto=format&fit=crop&q=80",
+        role: "Top-Order Batter",
+        battingStyle: "Right-hand bat",
+        bowlingStyle: "Right-arm medium",
+        iccRankings: "#2 ODI Batter • Legend",
+        overallRating: 98,
+        clutchIndex: 99,
+        abilities: { powerHitting: 91, strikeRotation: 99, chasingMastery: 100, spinPlay: 94, pacePlay: 98, fitnessFielding: 96 },
+        stats: { matches: 295, runs: 13906, avg: 58.18, sr: 93.5, hundreds: 50, fifties: 72, highest: "183" },
+        bio: "The undisputed 'King' and greatest chaser in cricket history. 50 ODI centuries, renowned for unmatched fitness and big-match intensity."
+      },
+      {
+        id: "player-02",
+        name: "Jasprit Bumrah",
+        country: "India",
+        flag: "🇮🇳",
+        avatar: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=500&auto=format&fit=crop&q=80",
+        role: "Fast Bowler",
+        battingStyle: "Right-hand bat",
+        bowlingStyle: "Right-arm fast (Unorthodox)",
+        iccRankings: "#1 Test Bowler • #1 T20I Bowler",
+        overallRating: 99,
+        clutchIndex: 99,
+        abilities: { yorkerPrecision: 100, deathBowling: 99, seamMovement: 97, reverseSwing: 98, economyControl: 99 },
+        stats: { matches: 70, wickets: 89, avg: 17.74, econ: 6.27, bbi: "3/7", fiveWickets: 0 },
+        bio: "Generational fast bowling weapon with lethal toe-crushing yorkers and suffocating economy rate in death overs."
+      },
+      {
+        id: "player-03",
+        name: "Travis Head",
+        country: "Australia",
+        flag: "🇦🇺",
+        avatar: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=500&auto=format&fit=crop&q=80",
+        role: "Opening Batter",
+        battingStyle: "Left-hand bat",
+        bowlingStyle: "Right-arm offbreak",
+        iccRankings: "#1 T20I Batter",
+        overallRating: 96,
+        clutchIndex: 98,
+        abilities: { powerHitting: 98, strikeRotation: 89, chasingMastery: 95, spinPlay: 92, pacePlay: 97 },
+        stats: { matches: 65, runs: 2424, avg: 42.52, sr: 104.9, hundreds: 5, fifties: 16, highest: "152" },
+        bio: "Australia's relentless big-stage match winner. Player of the Match in both WTC Final and ODI World Cup 2023 Final."
+      },
+      {
+        id: "player-04",
+        name: "Babar Azam",
+        country: "Pakistan",
+        flag: "🇵🇰",
+        avatar: "https://images.unsplash.com/photo-1517649763962-0c623266ddc0?w=500&auto=format&fit=crop&q=80",
+        role: "Top-Order Batter",
+        battingStyle: "Right-hand bat",
+        bowlingStyle: "Right-arm offbreak",
+        iccRankings: "#1 ODI Batter",
+        overallRating: 94,
+        clutchIndex: 88,
+        abilities: { powerHitting: 84, strikeRotation: 96, chasingMastery: 92, spinPlay: 93, pacePlay: 95 },
+        stats: { matches: 117, runs: 5729, avg: 56.72, sr: 88.8, hundreds: 19, fifties: 32, highest: "158" },
+        bio: "Master of pure classical strokeplay and pristine cover drives, commanding a stellar 56+ average in 50-over international cricket."
+      },
+      {
+        id: "player-05",
+        name: "Pat Cummins",
+        country: "Australia",
+        flag: "🇦🇺",
+        avatar: "https://images.unsplash.com/photo-1562088287-bde35a1ea917?w=500&auto=format&fit=crop&q=80",
+        role: "Fast Bowler / Captain",
+        battingStyle: "Right-hand bat",
+        bowlingStyle: "Right-arm fast",
+        iccRankings: "#2 Test Bowler • Champion Skipper",
+        overallRating: 97,
+        clutchIndex: 99,
+        abilities: { seamMovement: 96, reverseSwing: 94, deathBowling: 93, economyControl: 95, yorkerPrecision: 91 },
+        stats: { matches: 62, wickets: 269, avg: 22.53, econ: 2.75, bbi: "6/23", fiveWickets: 12 },
+        bio: "World Test Champion & World Cup winning captain, celebrated for unrelenting precision outside off stump and clutch leadership."
+      },
+      {
+        id: "player-06",
+        name: "Heinrich Klaasen",
+        country: "South Africa",
+        flag: "🇿🇦",
+        avatar: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=500&auto=format&fit=crop&q=80",
+        role: "Wicket-Keeper Batter",
+        battingStyle: "Right-hand bat",
+        bowlingStyle: "Right-arm offbreak",
+        iccRankings: "#2 World T20 Power Hitter",
+        overallRating: 95,
+        clutchIndex: 96,
+        abilities: { powerHitting: 99, spinPlay: 99, chasingMastery: 94, pacePlay: 93, strikeRotation: 86 },
+        stats: { matches: 54, runs: 1723, avg: 42.02, sr: 115.8, hundreds: 4, fifties: 6, highest: "174" },
+        bio: "The most destructive boundary hitter against spinners in modern white-ball cricket, generating immense power with pure backfoot torque."
+      }
+    ];
+
+    const LIVE_CHANNELS = [
+      { id: "ch1", name: "Star Sports / ICC TV", match: "IND vs AUS - T20 World Cup Final", url: "https://www.youtube.com/embed/jfKfPfyJRdk", quality: "4K UHD", viewers: "2.4M watching" },
+      { id: "ch2", name: "JioCinema Cricket Live", match: "CSK vs MI - El Clásico", url: "https://www.youtube.com/embed/5qap5aO4i9A", quality: "1080p HD", viewers: "1.8M watching" },
+      { id: "ch3", name: "Sky Sports Cricket", match: "ENG vs AUS - The Ashes Day 3", url: "https://www.youtube.com/embed/21X5lGlDOfg", quality: "1080p HD", viewers: "840K watching" },
+      { id: "ch4", name: "Willow Cricket HD", match: "PSL 2026 - Qualifier Live", url: "https://www.youtube.com/embed/kJQP7kiw5Fk", quality: "720p HD", viewers: "420K watching" }
+    ];
+
+    const STANDINGS = [
+      { rank: 1, team: "Chennai Super Kings", pld: 14, won: 10, lost: 4, nrr: "+0.842", pts: 20 },
+      { rank: 2, team: "Mumbai Indians", pld: 14, won: 9, lost: 5, nrr: "+0.612", pts: 18 },
+      { rank: 3, team: "Kolkata Knight Riders", pld: 14, won: 9, lost: 5, nrr: "+0.450", pts: 18 },
+      { rank: 4, team: "Sunrisers Hyderabad", pld: 14, won: 8, lost: 6, nrr: "+0.380", pts: 16 },
+      { rank: 5, team: "Rajasthan Royals", pld: 14, won: 7, lost: 7, nrr: "+0.112", pts: 14 }
+    ];
+
+    function App() {
+      const [activeTab, setActiveTab] = useState('matches');
+      const [selectedMatch, setSelectedMatch] = useState(null);
+      const [selectedPlayer, setSelectedPlayer] = useState(null);
+      const [activeChannel, setActiveChannel] = useState(LIVE_CHANNELS[0]);
+      const [typeFilter, setTypeFilter] = useState('ALL');
+      const [statusFilter, setStatusFilter] = useState('ALL');
+      const [searchQuery, setSearchQuery] = useState('');
+      const [fanMsg, setFanMsg] = useState('');
+      const [fanName, setFanName] = useState('');
+      const [chatLog, setChatLog] = useState([
+        { sender: 'ai', text: "Hello Cricket Fan! I am your AI Cricket Strategist. Inquire about live win probabilities, player match-up abilities, or pitch telemetry!" }
+      ]);
+      const [botInput, setBotInput] = useState('');
+
+      const filteredMatches = MATCHES_DATA.filter(m => {
+        const matchesType = typeFilter === 'ALL' || m.type === typeFilter;
+        const matchesStatus = statusFilter === 'ALL' || m.status === statusFilter;
+        const matchesSearch = m.tournament.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              m.team1.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              m.team2.name.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesType && matchesStatus && matchesSearch;
+      });
+
+      const handleAskBot = (e) => {
+        e.preventDefault();
+        if (!botInput.trim()) return;
+        const q = botInput;
+        setBotInput('');
+        setChatLog(prev => [...prev, { sender: 'user', text: q }]);
+
+        setTimeout(() => {
+          let ans = "AI Model: India currently has a 66% probability of victory with set batsman Virat Kohli anchoring the chase. Starc's remaining 2 balls of this spell and Bumrah's earlier 2/19 remain the match-defining metrics.";
+          if (q.toLowerCase().includes('bumrah')) {
+            ans = "Jasprit Bumrah's career death-over economy is 6.27. His pinpoint yorkers hold a 52% dot-ball ratio, the highest in modern ICC cricket.";
+          } else if (q.toLowerCase().includes('pitch')) {
+            ans = "Melbourne Cricket Ground track offers true bounce with lightning fast outfield conditions. Dew factor in the 2nd innings slightly aids the chasing team.";
+          }
+          setChatLog(prev => [...prev, { sender: 'ai', text: ans }]);
+        }, 300);
+      };
+
+      return (
+        <div className="min-h-screen bg-[#080E1A] text-slate-100 flex flex-col">
+          
+          {/* Header */}
+          <header className="sticky top-0 z-50 bg-[#0A101D]/95 backdrop-blur-md border-b border-slate-800 shadow-xl">
+            <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('matches')}>
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-amber-400 p-[2px] shadow-lg shadow-emerald-500/20">
+                  <div className="w-full h-full bg-[#080E1A] rounded-[14px] flex items-center justify-center text-xl">
+                    🏏
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xl font-black bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
+                      CRICKET PULSE AI
+                    </span>
+                    <span className="px-1.5 py-0.5 text-[9px] font-black uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-md">
+                      PRO
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400">Live Scoreboard • ICC Player Intel • Official Video Feeds</p>
+                </div>
+              </div>
+
+              {/* Navigation Tabs */}
+              <nav className="flex items-center space-x-1 sm:space-x-2 text-xs font-bold">
+                {[
+                  { id: 'matches', label: 'Live Matches', badge: 'LIVE' },
+                  { id: 'video', label: 'Match Video & TV', badge: '4K' },
+                  { id: 'players', label: 'ICC Player Hub', badge: 'STATS' },
+                  { id: 'ai', label: 'AI Predictor', badge: 'AI' },
+                  { id: 'standings', label: 'Points Table', badge: null }
+                ].map(item => (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={`px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5 ${
+                      activeTab === item.id
+                        ? 'bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-400 border border-emerald-500/40 shadow-md'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    {item.badge && (
+                      <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-black ${
+                        item.badge === 'LIVE' ? 'bg-red-500 text-white animate-pulse' : 'bg-emerald-500/20 text-emerald-300'
+                      }`}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </nav>
+            </div>
+          </header>
+
+          {/* Rolling Ticker */}
+          <div className="bg-[#0B1325] border-b border-slate-800 py-2 px-4 overflow-x-auto">
+            <div className="max-w-7xl mx-auto flex items-center space-x-4 min-w-max text-xs">
+              <span className="px-2.5 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/40 font-black flex items-center space-x-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
+                <span>LIVE TICKER</span>
+              </span>
+              {MATCHES_DATA.map(m => (
+                <div 
+                  key={m.id} 
+                  onClick={() => setSelectedMatch(m)}
+                  className="bg-slate-900/90 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/40 px-3 py-1 rounded-xl cursor-pointer flex items-center space-x-2 text-slate-300"
+                >
+                  <span className="text-[10px] bg-slate-800 px-1 rounded text-emerald-400 font-mono">{m.format}</span>
+                  <span className="font-bold">{m.team1.shortName} {m.team1.score}/{m.team1.wickets} vs {m.team2.shortName} {m.team2.score}/{m.team2.wickets}</span>
+                  <span className="text-slate-400 text-[11px]">• {m.statusText.slice(0, 28)}...</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Content Body */}
+          <main className="max-w-7xl w-full mx-auto px-4 py-6 flex-1 space-y-6">
+            
+            {/* TAB: MATCHES */}
+            {activeTab === 'matches' && (
+              <div className="space-y-6">
+                {/* Hero Showcase */}
+                <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#0C1B33] via-[#0F2942] to-[#0A1628] border border-emerald-500/30 p-6 sm:p-10 shadow-2xl">
+                  <div className="max-w-2xl space-y-3">
+                    <span className="text-xs font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/20 border border-emerald-500/40 px-3 py-1 rounded-full inline-block">
+                      ★ ICC T20 WORLD CUP 2026 FINAL
+                    </span>
+                    <h1 className="text-3xl sm:text-5xl font-black text-white leading-tight">
+                      India vs Australia Grand Finale Live
+                    </h1>
+                    <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
+                      Australia 188/6 (20 ov) • India 167/4 (17.4 ov). Virat Kohli batting on 76* (46). Full ball-by-ball commentary, real-time AI win probability meter, and official live feed.
+                    </p>
+                    <div className="flex items-center space-x-3 pt-2">
+                      <button 
+                        onClick={() => setSelectedMatch(MATCHES_DATA[0])}
+                        className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-extrabold text-xs shadow-lg hover:opacity-95"
+                      >
+                        ⚡ Open Full Scorecard
+                      </button>
+                      <button 
+                        onClick={() => setActiveTab('video')}
+                        className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs border border-slate-700"
+                      >
+                        📺 Watch Live Stream
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Filters */}
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-[#0F172A] p-3.5 rounded-2xl border border-slate-800">
+                  <div className="flex items-center space-x-1.5 text-xs font-bold">
+                    <span className="text-slate-400 mr-1">Format:</span>
+                    {['ALL', 'INTERNATIONAL', 'PREMIER_LEAGUE'].map(t => (
+                      <button
+                        key={t}
+                        onClick={() => setTypeFilter(t)}
+                        className={`px-3 py-1.5 rounded-xl transition-all ${
+                          typeFilter === t ? 'bg-emerald-500 text-black font-extrabold' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        }`}
+                      >
+                        {t === 'ALL' ? 'All Matches' : t === 'INTERNATIONAL' ? 'ICC International' : 'Premier Leagues (IPL/BBL)'}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center space-x-1.5 text-xs font-semibold">
+                    <span className="text-slate-400 mr-1">Status:</span>
+                    {['ALL', 'LIVE', 'UPCOMING'].map(st => (
+                      <button
+                        key={st}
+                        onClick={() => setStatusFilter(st)}
+                        className={`px-2.5 py-1 rounded-lg ${
+                          statusFilter === st ? 'bg-amber-400 text-black font-bold' : 'bg-slate-800 text-slate-400'
+                        }`}
+                      >
+                        {st}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Match Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredMatches.map(m => (
+                    <div 
+                      key={m.id}
+                      className="bg-gradient-to-b from-[#111C30] to-[#0D1525] border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-5 shadow-xl transition-all hover:shadow-2xl"
+                    >
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+                        <span className="text-xs font-bold text-slate-300 truncate max-w-[210px]">{m.tournament}</span>
+                        <div className="flex items-center space-x-1.5">
+                          <span className="text-[10px] font-black bg-slate-800 px-2 py-0.5 rounded text-slate-300">{m.format}</span>
+                          {m.status === 'LIVE' && (
+                            <span className="text-[10px] font-extrabold bg-red-500/20 text-red-400 border border-red-500/40 px-2 py-0.5 rounded-full animate-pulse">
+                              LIVE
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Scores */}
+                      <div className="space-y-3 mb-3">
+                        <div className="flex justify-between items-center text-sm font-bold">
+                          <span className="flex items-center space-x-2">
+                            <span className="text-xl">{m.team1.flag}</span>
+                            <span>{m.team1.name}</span>
+                          </span>
+                          <span className="text-white font-extrabold">{m.team1.score}/{m.team1.wickets} <span className="text-xs text-slate-400">({m.team1.overs} ov)</span></span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm font-bold">
+                          <span className="flex items-center space-x-2">
+                            <span className="text-xl">{m.team2.flag}</span>
+                            <span className="text-amber-300">{m.team2.name}</span>
+                          </span>
+                          <span className="text-amber-400 font-extrabold">{m.team2.score}/{m.team2.wickets} <span className="text-xs text-slate-400">({m.team2.overs} ov)</span></span>
+                        </div>
+                      </div>
+
+                      {/* Status */}
+                      <div className="bg-[#0A1220] p-2.5 rounded-xl border border-slate-800 text-xs font-semibold text-emerald-400 mb-3">
+                        {m.statusText}
+                      </div>
+
+                      {/* Recent Balls */}
+                      {m.recentBalls && m.recentBalls.length > 0 && (
+                        <div className="flex items-center justify-between text-[11px] mb-3 px-1">
+                          <span className="text-slate-400 font-bold uppercase text-[9px]">Recent:</span>
+                          <div className="flex space-x-1">
+                            {m.recentBalls.slice(-6).map((b, i) => (
+                              <span key={i} className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                                b === '6' ? 'bg-amber-400 text-black' :
+                                b === '4' ? 'bg-blue-500 text-white' :
+                                b === 'W' ? 'bg-red-500 text-white animate-pulse' :
+                                b === '0' ? 'bg-slate-800 text-slate-400' : 'bg-emerald-500/20 text-emerald-300'
+                              }`}>{b}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Win Probability Bar */}
+                      {m.winProbability && (
+                        <div className="mb-4 bg-slate-900/60 p-2 rounded-xl border border-slate-800 text-[11px]">
+                          <div className="flex justify-between text-slate-300 font-bold mb-1">
+                            <span>{m.team1.shortName} {m.winProbability.team1}%</span>
+                            <span className="text-emerald-400">{m.team2.shortName} {m.winProbability.team2}%</span>
+                          </div>
+                          <div className="w-full h-1.5 rounded-full bg-slate-800 flex overflow-hidden">
+                            <div style={{ width: `${m.winProbability.team1}%` }} className="bg-blue-500" />
+                            <div style={{ width: `${m.winProbability.team2}%` }} className="bg-emerald-400" />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
+                        <button
+                          onClick={() => setSelectedMatch(m)}
+                          className="py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200"
+                        >
+                          👁️ Scorecard
+                        </button>
+                        <button
+                          onClick={() => { setActiveTab('video'); }}
+                          className="py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-black text-xs font-extrabold"
+                        >
+                          📺 Watch Live
+                        </button>
+                      </div>
+
+                    </div>
+                  ))}
+                </div>
+
+                {/* Live Fan Zone */}
+                <div className="bg-[#0F172A] border border-slate-800 rounded-3xl p-5 space-y-4">
+                  <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <h3 className="text-sm font-bold text-white flex items-center space-x-2">
+                      <span>💬 Live Fan Arena & Global Chat</span>
+                    </h3>
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold">REALTIME</span>
+                  </div>
+                  <div className="flex space-x-2">
+                    <input 
+                      type="text" 
+                      value={fanName}
+                      onChange={e => setFanName(e.target.value)}
+                      placeholder="Your handle..." 
+                      className="w-1/4 bg-slate-900 text-xs px-3 py-2 rounded-xl border border-slate-800 text-white"
+                    />
+                    <input 
+                      type="text" 
+                      value={fanMsg}
+                      onChange={e => setFanMsg(e.target.value)}
+                      placeholder="Cheer for your team..." 
+                      className="flex-1 bg-slate-900 text-xs px-3 py-2 rounded-xl border border-slate-800 text-white"
+                    />
+                    <button 
+                      onClick={() => {
+                        if (fanMsg) {
+                          alert(`Cheer posted: "${fanMsg}"! Recorded in fan arena.`);
+                          setFanMsg('');
+                        }
+                      }}
+                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-extrabold rounded-xl"
+                    >
+                      Post
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                      <strong className="text-emerald-400 block">🇮🇳 Aarav:</strong>
+                      <span className="text-slate-300">Kohli is turning on the heat! 22 off 14 is coming home! 🔥</span>
+                    </div>
+                    <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                      <strong className="text-amber-400 block">🇦🇺 Liam:</strong>
+                      <span className="text-slate-300">Starc can reverse swing under pressure. One wicket changes everything!</span>
+                    </div>
+                    <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                      <strong className="text-cyan-400 block">🏆 FanWorld:</strong>
+                      <span className="text-slate-300">Unbelievable tournament. Highest TV viewership in cricket history!</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: VIDEO PLAYER */}
+            {activeTab === 'video' && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-[#0F172A] p-4 rounded-2xl border border-slate-800">
+                  <div>
+                    <h2 className="text-lg font-black text-white flex items-center space-x-2">
+                      <span className="text-red-500">📺</span>
+                      <span>Live Cricket Video & Official Broadcast Feeds</span>
+                    </h2>
+                    <p className="text-xs text-slate-400">Stream high definition official match video, expert analysis, and press conferences.</p>
+                  </div>
+                  <span className="px-3 py-1 rounded-xl bg-slate-800 text-emerald-400 border border-slate-700 text-xs font-bold">
+                    Official Licensed Feed
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                  {/* Stream */}
+                  <div className="lg:col-span-3 space-y-3">
+                    <div className="relative aspect-video rounded-3xl overflow-hidden bg-black border-2 border-slate-800 shadow-2xl">
+                      <iframe 
+                        src={activeChannel.url}
+                        title={activeChannel.name}
+                        className="w-full h-full border-0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                    <div className="p-4 bg-[#111A2D] rounded-2xl border border-slate-800 flex justify-between items-center text-xs">
+                      <div>
+                        <h3 className="font-extrabold text-white text-sm">{activeChannel.match}</h3>
+                        <p className="text-slate-400">{activeChannel.name} • {activeChannel.quality}</p>
+                      </div>
+                      <span className="px-3 py-1 rounded-full bg-red-500/20 text-red-400 font-black border border-red-500/40">
+                        {activeChannel.viewers}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Channels */}
+                  <div className="space-y-3">
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Select Broadcast Stream:</h3>
+                    {LIVE_CHANNELS.map(ch => (
+                      <div 
+                        key={ch.id}
+                        onClick={() => setActiveChannel(ch)}
+                        className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                          activeChannel.id === ch.id
+                            ? 'bg-emerald-500/20 border-emerald-500 text-white'
+                            : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'
+                        }`}
+                      >
+                        <h4 className="font-bold text-xs">{ch.name}</h4>
+                        <p className="text-[11px] text-slate-400 truncate">{ch.match}</p>
+                        <span className="text-[10px] text-emerald-400 block mt-1">{ch.quality} • {ch.viewers}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: ICC PLAYER HUB */}
+            {activeTab === 'players' && (
+              <div className="space-y-6">
+                <div className="bg-gradient-to-r from-emerald-950/60 via-[#101F38] to-slate-900 border border-emerald-500/30 rounded-3xl p-6 sm:p-8">
+                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/20 px-3 py-1 rounded-full">
+                    ICC Player Intelligence & Ability Matrix
+                  </span>
+                  <h2 className="text-3xl font-black text-white mt-2">World Cricket Legends & Modern Superstars</h2>
+                  <p className="text-slate-300 text-xs sm:text-sm mt-1">Detailed scouting reports, abilities, clutch rating, and international career statistics.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {PLAYERS_DATABASE.map(p => (
+                    <div 
+                      key={p.id}
+                      onClick={() => setSelectedPlayer(p)}
+                      className="bg-[#111A2E] hover:bg-[#142038] border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-5 cursor-pointer transition-all group"
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex items-center space-x-3">
+                          <img 
+                            src={p.avatar} 
+                            alt={p.name} 
+                            className="w-12 h-12 rounded-2xl object-cover border border-slate-700 group-hover:scale-105 transition-transform"
+                          />
+                          <div>
+                            <div className="flex items-center space-x-1.5 text-xs">
+                              <span>{p.flag}</span>
+                              <span className="text-slate-400 font-bold uppercase text-[10px]">{p.country}</span>
+                            </div>
+                            <h3 className="font-bold text-white group-hover:text-emerald-400">{p.name}</h3>
+                            <span className="text-[11px] text-emerald-400">{p.role}</span>
+                          </div>
+                        </div>
+                        <div className="bg-gradient-to-b from-amber-400 to-amber-600 text-black px-2 py-1 rounded-xl text-center font-black text-xs">
+                          <span className="text-[9px] block">OVR</span>
+                          <span className="text-sm">{p.overallRating}</span>
+                        </div>
+                      </div>
+
+                      {/* Ability Bars */}
+                      <div className="space-y-2 mb-4">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase block">Skill Ratings</span>
+                        {Object.entries(p.abilities).slice(0, 3).map(([k, v]) => (
+                          <div key={k} className="text-xs">
+                            <div className="flex justify-between text-[11px] text-slate-300 mb-0.5">
+                              <span className="capitalize">{k.replace(/([A-Z])/g, ' $1')}</span>
+                              <span className="text-emerald-400 font-bold">{v}%</span>
+                            </div>
+                            <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                              <div style={{ width: `${v}%` }} className="h-full bg-emerald-400" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-800 flex justify-between items-center text-xs text-emerald-400 font-bold">
+                        <span>Inspect Full Intel & Records</span>
+                        <span>➔</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TAB: AI WIN PREDICTOR */}
+            {activeTab === 'ai' && (
+              <div className="space-y-6">
+                <div className="bg-gradient-to-r from-amber-950/40 via-[#101F38] to-emerald-950/40 border border-amber-500/30 rounded-3xl p-6 sm:p-8">
+                  <span className="text-xs font-bold text-amber-300 uppercase tracking-wider bg-amber-400/20 px-3 py-1 rounded-full">
+                    Cricket Pulse Neural Predictor
+                  </span>
+                  <h2 className="text-3xl font-black text-white mt-2">AI Match Analyst & Win Probability Engine</h2>
+                  <p className="text-slate-300 text-xs sm:text-sm mt-1">Forecasting win probabilities with ball-by-ball mathematical leverage, DLS resource metrics, and interactive AI chat.</p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Gauge */}
+                  <div className="bg-[#10192A] border border-slate-800 rounded-3xl p-6 space-y-5">
+                    <h3 className="font-extrabold text-white text-base">Live Win Probability Meter</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm font-bold">
+                        <span className="text-blue-400">🇦🇺 Australia: 34%</span>
+                        <span className="text-emerald-400">🇮🇳 India: 66%</span>
+                      </div>
+                      <div className="w-full h-3 rounded-full bg-slate-800 overflow-hidden flex">
+                        <div style={{ width: '34%' }} className="bg-blue-500 h-full" />
+                        <div style={{ width: '66%' }} className="bg-emerald-400 h-full" />
+                      </div>
+                    </div>
+                    <div className="p-4 bg-slate-900 rounded-2xl border border-slate-800 text-xs text-slate-300 leading-relaxed">
+                      <strong className="text-amber-300 block mb-1">AI Tactical Insights:</strong>
+                      India requires 22 runs in 14 deliveries. With Virat Kohli batting at 165 strike rate, win probability leans 66% toward India. If Mitchell Starc manages a wicket on his remaining balls, probability swings back towards 50-50 parity.
+                    </div>
+                  </div>
+
+                  {/* Chatbot */}
+                  <div className="bg-[#10192A] border border-slate-800 rounded-3xl p-6 flex flex-col justify-between h-[450px]">
+                    <div>
+                      <h3 className="font-bold text-white text-sm border-b border-slate-800 pb-3 mb-3">Ask Cricket Pulse AI Expert</h3>
+                      <div className="space-y-2.5 overflow-y-auto max-h-[290px] pr-2 text-xs">
+                        {chatLog.map((c, i) => (
+                          <div key={i} className={`flex ${c.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`p-3 rounded-2xl max-w-[85%] ${c.sender === 'user' ? 'bg-emerald-500 text-black font-semibold' : 'bg-slate-900 text-slate-200 border border-slate-800'}`}>
+                              {c.text}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <form onSubmit={handleAskBot} className="flex space-x-2 pt-2 border-t border-slate-800">
+                      <input 
+                        type="text" 
+                        value={botInput}
+                        onChange={e => setBotInput(e.target.value)}
+                        placeholder="Ask about live score, Bumrah, Kohli, pitch..." 
+                        className="flex-1 bg-slate-900 text-xs px-3 py-2 rounded-xl border border-slate-700 text-white"
+                      />
+                      <button type="submit" className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-bold text-xs rounded-xl">
+                        Send
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: STANDINGS */}
+            {activeTab === 'standings' && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center bg-[#0F172A] p-4 rounded-2xl border border-slate-800">
+                  <h2 className="text-base font-bold text-white">IPL 2026 Official Standings & Points Table</h2>
+                  <span className="text-xs text-amber-400 font-bold">Top 4 Qualify</span>
+                </div>
+                <div className="bg-[#0E1729] border border-slate-800 rounded-3xl overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-[#111A2D] text-slate-400 uppercase text-[10px] border-b border-slate-800">
+                      <tr>
+                        <th className="p-3">Rank</th>
+                        <th className="p-3">Team</th>
+                        <th className="p-3 text-center">Pld</th>
+                        <th className="p-3 text-center">Won</th>
+                        <th className="p-3 text-center">Lost</th>
+                        <th className="p-3 text-center">NRR</th>
+                        <th className="p-3 text-right font-black text-amber-400">Pts</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800">
+                      {STANDINGS.map(s => (
+                        <tr key={s.rank} className="hover:bg-slate-800/40">
+                          <td className="p-3 font-bold">{s.rank}</td>
+                          <td className="p-3 font-extrabold text-white">{s.team}</td>
+                          <td className="p-3 text-center text-slate-300">{s.pld}</td>
+                          <td className="p-3 text-center text-emerald-400 font-bold">{s.won}</td>
+                          <td className="p-3 text-center text-red-400">{s.lost}</td>
+                          <td className="p-3 text-center font-mono text-emerald-400">{s.nrr}</td>
+                          <td className="p-3 text-right text-base font-black text-amber-400">{s.pts}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+          </main>
+
+          {/* Scorecard Modal */}
+          {selectedMatch && (
+            <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+              <div className="bg-[#0C1424] border border-slate-700 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-5">
+                <div className="flex justify-between items-start border-b border-slate-800 pb-3">
+                  <div>
+                    <span className="text-xs text-amber-400 font-bold">{selectedMatch.tournament}</span>
+                    <h3 className="text-xl font-black text-white mt-1">
+                      {selectedMatch.team1.name} ({selectedMatch.team1.score}/{selectedMatch.team1.wickets}) vs {selectedMatch.team2.name} ({selectedMatch.team2.score}/{selectedMatch.team2.wickets})
+                    </h3>
+                    <p className="text-xs text-emerald-400 mt-1 font-semibold">{selectedMatch.statusText}</p>
+                  </div>
+                  <button onClick={() => setSelectedMatch(null)} className="p-2 bg-slate-800 rounded-xl text-slate-400 hover:text-white">✕</button>
+                </div>
+
+                {/* Scorecard commentary */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold text-slate-400 uppercase">Live Ball-By-Ball Feed</h4>
+                  {selectedMatch.commentary && selectedMatch.commentary.length > 0 ? (
+                    selectedMatch.commentary.map((c, i) => (
+                      <div key={i} className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-xs">
+                        <div className="flex justify-between text-amber-400 font-bold mb-1">
+                          <span>Over {c.over}</span>
+                          <span className="text-emerald-400">{c.tag}</span>
+                        </div>
+                        <p className="text-slate-300">{c.text}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-500">Live commentary stream active.</p>
+                  )}
+                </div>
+
+                <button onClick={() => setSelectedMatch(null)} className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs">
+                  Close Scorecard
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Player Modal */}
+          {selectedPlayer && (
+            <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+              <div className="bg-[#0C1424] border border-slate-700 rounded-3xl max-w-2xl w-full p-6 space-y-4">
+                <div className="flex justify-between items-start border-b border-slate-800 pb-3">
+                  <div className="flex items-center space-x-3">
+                    <img src={selectedPlayer.avatar} className="w-16 h-16 rounded-2xl object-cover border border-emerald-500/40" />
+                    <div>
+                      <span className="text-xs text-emerald-400 font-bold">{selectedPlayer.flag} {selectedPlayer.country} • {selectedPlayer.role}</span>
+                      <h3 className="text-2xl font-black text-white">{selectedPlayer.name}</h3>
+                      <span className="text-xs text-amber-300 font-semibold">{selectedPlayer.iccRankings}</span>
+                    </div>
+                  </div>
+                  <button onClick={() => setSelectedPlayer(null)} className="p-2 bg-slate-800 rounded-xl text-slate-400 hover:text-white">✕</button>
+                </div>
+                <p className="text-xs text-slate-300 bg-slate-900/60 p-3 rounded-xl border border-slate-800 leading-relaxed">{selectedPlayer.bio}</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                  <div className="p-2 bg-slate-900 rounded-xl"><span className="text-slate-400 block text-[10px]">Matches</span><strong className="text-white text-base">{selectedPlayer.stats.matches}</strong></div>
+                  <div className="p-2 bg-slate-900 rounded-xl"><span className="text-slate-400 block text-[10px]">Runs/Wkts</span><strong className="text-amber-400 text-base">{selectedPlayer.stats.runs || selectedPlayer.stats.wickets}</strong></div>
+                  <div className="p-2 bg-slate-900 rounded-xl"><span className="text-slate-400 block text-[10px]">Average</span><strong className="text-emerald-400 text-base">{selectedPlayer.stats.avg}</strong></div>
+                  <div className="p-2 bg-slate-900 rounded-xl"><span className="text-slate-400 block text-[10px]">SR/Econ</span><strong className="text-cyan-400 text-base">{selectedPlayer.stats.sr || selectedPlayer.stats.econ}</strong></div>
+                </div>
+                <button onClick={() => setSelectedPlayer(null)} className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold rounded-xl text-xs">
+                  Done
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Footer */}
+          <footer className="mt-12 bg-[#060A14] border-t border-slate-800 py-6 text-center text-xs text-slate-500">
+            <p className="text-slate-400 font-semibold">Cricket Pulse AI © 2026 • Professional Live Scoreboard & Player Analytics</p>
+            <p className="mt-1">Deploy ready on Vercel, Supabase, and Netlify.</p>
+          </footer>
+
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
